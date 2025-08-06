@@ -21,7 +21,7 @@ module.exports = {
             config: {
                 name: 'node-janitor',
                 setupExe: 'NodeJanitorSetup.exe',
-                setupIcon: './assets/icon.ico', // 如果有Windows图标
+                // setupIcon: './assets/icon.ico', // Remove icon config until we have actual icon files
             },
         },
         {
