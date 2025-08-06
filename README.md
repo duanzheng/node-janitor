@@ -55,17 +55,20 @@ Node Janitor is a cross-platform desktop application built with Electron that he
 Choose the appropriate download for your operating system:
 
 #### 🍎 **macOS**
+
 - Download `Node Janitor-darwin-arm64-1.0.0.zip` (Apple Silicon) or `Node Janitor-darwin-x64-1.0.0.zip` (Intel)
 - Extract the zip file
 - Drag `Node Janitor.app` to your Applications folder
 - Right-click and select "Open" on first launch (due to macOS security)
 
 #### 🪟 **Windows**
+
 - Download `NodeJanitorSetup.exe`
 - Run the installer and follow the setup wizard
 - Launch from Start Menu or Desktop shortcut
 
 #### 🐧 **Linux**
+
 - **Debian/Ubuntu**: Download `.deb` file and run `sudo dpkg -i node-janitor_1.0.0_amd64.deb`
 - **Red Hat/Fedora**: Download `.rpm` file and run `sudo rpm -i node-janitor-1.0.0.x86_64.rpm`
 - Or use your distribution's package manager
@@ -73,6 +76,7 @@ Choose the appropriate download for your operating system:
 ### System Requirements
 
 **Minimum Requirements:**
+
 - **macOS**: 10.15 (Catalina) or later
 - **Windows**: Windows 10 or later
 - **Linux**: Ubuntu 18.04+ / Debian 10+ / Fedora 32+ or equivalent
@@ -80,6 +84,7 @@ Choose the appropriate download for your operating system:
 - **Disk**: 200 MB free space for installation
 
 **Recommended:**
+
 - **RAM**: 1 GB or more for better performance with large projects
 - **Disk**: 500 MB free space
 
@@ -87,7 +92,7 @@ Choose the appropriate download for your operating system:
 
 **Prerequisites:**
 
-- Node.js (>= 16.0.0)
+- Node.js (>= 20.0.0)
 - Yarn package manager
 
 ```bash
@@ -164,12 +169,14 @@ yarn make
 This project uses automated releases via GitHub Actions:
 
 ### Automated Releases
+
 - **Trigger**: Push a version tag (e.g., `v1.0.0`) to trigger automated builds
 - **Cross-Platform**: Automatically builds for macOS, Windows, and Linux
 - **Distribution**: Creates installers and packages for all platforms
 - **GitHub Release**: Automatically publishes to GitHub Releases with generated notes
 
 ### Creating a New Release
+
 ```bash
 # Update version in package.json
 npm version patch  # or minor/major
@@ -179,8 +186,9 @@ git push origin main --tags
 ```
 
 The GitHub Actions workflow will:
+
 1. ✅ Run tests on all platforms
-2. 🏗️ Build applications for macOS, Windows, and Linux  
+2. 🏗️ Build applications for macOS, Windows, and Linux
 3. 📦 Create platform-specific installers
 4. 🚀 Publish to GitHub Releases automatically
 
