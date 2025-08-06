@@ -132,7 +132,6 @@ const App: React.FC = () => {
                                 ? `${(totalSaved / 1024 / 1024 / 1024).toFixed(2)} GB`
                                 : '0 GB'}
                         </span>
-                        <span>Node Janitor ©2024</span>
                     </div>
                 </Footer>
             </Layout>
