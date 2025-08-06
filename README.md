@@ -50,27 +50,27 @@ Node Janitor is a cross-platform desktop application built with Electron that he
 
 ### Download Pre-built Binaries
 
-**Latest Release: [v1.0.1](https://github.com/duanzheng/node-janitor/releases/latest)**
+**📥 [Download Latest Release](https://github.com/duanzheng/node-janitor/releases/latest)**
 
 Choose the appropriate download for your operating system:
 
 #### 🍎 **macOS**
 
-- Download `Node Janitor-darwin-arm64-1.0.1.zip` (Apple Silicon) or `Node Janitor-darwin-x64-1.0.1.zip` (Intel)
+- Download the `.zip` file (available for both Apple Silicon and Intel)
 - Extract the zip file
 - Drag `Node Janitor.app` to your Applications folder
 - Right-click and select "Open" on first launch (due to macOS security)
 
 #### 🪟 **Windows**
 
-- Download `NodeJanitorSetup.exe`
+- Download the `.exe` installer
 - Run the installer and follow the setup wizard
 - Launch from Start Menu or Desktop shortcut
 
 #### 🐧 **Linux**
 
-- **Debian/Ubuntu**: Download `.deb` file and run `sudo dpkg -i node-janitor_1.0.1_amd64.deb`
-- **Red Hat/Fedora**: Download `.rpm` file and run `sudo rpm -i node-janitor-1.0.1.x86_64.rpm`
+- **Debian/Ubuntu**: Download the `.deb` file and install with `sudo dpkg -i <filename>.deb`
+- **Red Hat/Fedora**: Download the `.rpm` file and install with `sudo rpm -i <filename>.rpm`
 - Or use your distribution's package manager
 
 ### System Requirements
@@ -97,7 +97,7 @@ Choose the appropriate download for your operating system:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/node-janitor.git
+git clone https://github.com/duanzheng/node-janitor.git
 cd node-janitor
 
 # Install dependencies
@@ -170,7 +170,7 @@ This project uses automated releases via GitHub Actions:
 
 ### Automated Releases
 
-- **Trigger**: Push a version tag (e.g., `v1.0.0`) to trigger automated builds
+- **Trigger**: Push a version tag (e.g., `v1.2.3`) to trigger automated builds
 - **Cross-Platform**: Automatically builds for macOS, Windows, and Linux
 - **Distribution**: Creates installers and packages for all platforms
 - **GitHub Release**: Automatically publishes to GitHub Releases with generated notes
