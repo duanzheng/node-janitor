@@ -3,13 +3,16 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
     packagerConfig: {
-        asar: true,
+        asar: {
+            unpack: '**/{.**,**}/**/*.node',
+        },
         name: 'Node Janitor',
         productName: 'Node Janitor',
         appBundleId: 'com.tonyduan.node-janitor',
         appCategoryType: 'public.app-category.developer-tools',
         executableName: 'node-janitor',
         // icon: './assets/icon', // 如果你有图标文件的话
+        // Let webpack plugin handle ignores automatically
     },
     rebuildConfig: {},
     makers: [
@@ -18,7 +21,7 @@ module.exports = {
             config: {
                 name: 'node-janitor',
                 setupExe: 'NodeJanitorSetup.exe',
-                setupIcon: './assets/icon.ico' // 如果有Windows图标
+                setupIcon: './assets/icon.ico', // 如果有Windows图标
             },
         },
         {
