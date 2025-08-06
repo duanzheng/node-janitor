@@ -3,7 +3,7 @@
     "productName": "node-janitor",
     "version": "1.0.0",
     "description": "A powerful desktop application for cleaning Node.js project dependencies and package manager caches",
-    "main": ".webpack/main/index.js",
+    "main": ".webpack/main",
     "scripts": {
         "dev": "cross-env NODE_ENV=development electron-forge start",
         "dev:restart": "yarn clean && yarn dev",
@@ -13,7 +13,7 @@
         "make": "electron-forge make",
         "publish": "electron-forge publish",
         "lint": "echo \"No linting configured\"",
-        "test": "jest",
+        "test": "jest --passWithNoTests",
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage"
     },

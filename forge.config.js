@@ -4,12 +4,22 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
     packagerConfig: {
         asar: true,
+        name: 'Node Janitor',
+        productName: 'Node Janitor',
+        appBundleId: 'com.tonyduan.node-janitor',
+        appCategoryType: 'public.app-category.developer-tools',
+        executableName: 'node-janitor',
+        // icon: './assets/icon', // 如果你有图标文件的话
     },
     rebuildConfig: {},
     makers: [
         {
             name: '@electron-forge/maker-squirrel',
-            config: {},
+            config: {
+                name: 'node-janitor',
+                setupExe: 'NodeJanitorSetup.exe',
+                setupIcon: './assets/icon.ico' // 如果有Windows图标
+            },
         },
         {
             name: '@electron-forge/maker-zip',
