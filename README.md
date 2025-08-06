@@ -5,9 +5,9 @@
 **A powerful desktop application for cleaning Node.js project dependencies and package manager caches**
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/duanzheng/node-janitor)](https://github.com/duanzheng/node-janitor/releases)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/duanzheng/node-janitor/release.yml?branch=main)](https://github.com/duanzheng/node-janitor/actions)
-[![Downloads](https://img.shields.io/github/downloads/duanzheng/node-janitor/total)](https://github.com/duanzheng/node-janitor/releases)
+[![GitHub release](https://img.shields.io/github/v/release/duanzheng/node-janitor?cache=0)](https://github.com/duanzheng/node-janitor/releases)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/duanzheng/node-janitor/release.yml?branch=main&cache=0)](https://github.com/duanzheng/node-janitor/actions)
+[![Downloads](https://img.shields.io/github/downloads/duanzheng/node-janitor/total?cache=0)](https://github.com/duanzheng/node-janitor/releases)
 [![Electron](https://img.shields.io/badge/Electron-37.2.6-47848F.svg)](https://electronjs.org/)
 [![React](https://img.shields.io/badge/React-19.1.1-61DAFB.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6.svg)](https://www.typescriptlang.org/)
