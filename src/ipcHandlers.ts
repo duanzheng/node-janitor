@@ -153,18 +153,12 @@ async function detectPackageManagerCaches(): Promise<Cache[]> {
   
   // 检测yarn缓存
   try {
-    console.log('Starting yarn cache detection...');
-    
     // 首先检查系统PATH
     const { stdout: whichYarn } = await execa('which', ['yarn']);
-    console.log(`which yarn result: ${whichYarn}`);
-    
     const yarnPath = whichYarn.trim();
-    console.log(`Using yarn path: ${yarnPath}`);
     
     // 使用完整路径调用yarn
     const { stdout: yarnCachePath } = await execa(yarnPath, ['cache', 'dir']);
-    console.log(`yarn cache dir result: ${yarnCachePath}`);
     
     const yarnCacheSize = await getDirectorySize(yarnCachePath.trim());
     caches.push({
@@ -173,9 +167,7 @@ async function detectPackageManagerCaches(): Promise<Cache[]> {
       size: yarnCacheSize,
       detected: true
     });
-    console.log('Yarn cache detection successful');
   } catch (error) {
-    console.error('Yarn cache detection error:', error);
     caches.push({
       name: 'yarn',
       path: '',
@@ -225,9 +217,14 @@ async function cleanPackageManagerCache(packageManager: string): Promise<IPCResu
         throw new Error(`Unsupported package manager: ${packageManager}`);
     }
     
+    // 重新检测缓存大小，确保清理生效
+    const caches = await detectPackageManagerCaches();
+    const cache = caches.find(c => c.name === packageManager);
+    const newSize = cache ? cache.size : 0;
+    
     return {
       success: true,
-      message: `Successfully cleaned ${packageManager} cache`
+      message: `Successfully cleaned ${packageManager} cache. New size: ${newSize}`
     };
   } catch (error) {
     return {

@@ -48,3 +48,7 @@ src/
 - **User Experience**: All destructive operations require explicit user confirmation
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 - **Performance**: Directory scanning is async and reports progress via loading states
+
+## Development Tips
+
+- 这个项目会热更新，因此你修改代码后无需启动，我就能直接看到更新后的结果

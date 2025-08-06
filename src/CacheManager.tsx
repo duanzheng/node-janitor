@@ -15,8 +15,6 @@ import {
 import {
     DeleteOutlined,
     ReloadOutlined,
-    CheckCircleOutlined,
-    ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { formatFileSize, getPackageManagerIcon } from './utils';
 import { Cache } from './types';
@@ -47,25 +45,22 @@ const CacheManager: React.FC = () => {
 
     // 清理缓存
     const handleCleanCache = async (packageManager: string) => {
-        console.log('Cleaning cache for:', packageManager);
         const cache = caches.find((c) => c.name === packageManager);
         if (!cache || !cache.detected) {
-            console.log('Cache not found or not detected');
             return;
         }
 
         setCleaning((prev) => ({ ...prev, [packageManager]: true }));
         try {
             const result = await window.electronAPI.cleanCache(packageManager);
-            console.log('Clean cache result:', result);
 
             if (result.success) {
-                // 更新缓存状态
-                setCaches((prevCaches) =>
-                    prevCaches.map((cache) =>
-                        cache.name === packageManager
-                            ? { ...cache, size: 0 }
-                            : cache
+                // 直接更新状态，不重新检测
+                setCaches(prevCaches => 
+                    prevCaches.map(c => 
+                        c.name === packageManager 
+                            ? { ...c, size: 0 } 
+                            : c
                     )
                 );
                 message.success(`${packageManager.toUpperCase()} 缓存清理成功`);
@@ -107,62 +102,77 @@ const CacheManager: React.FC = () => {
                     <Row gutter={[16, 16]}>
                         {caches.map((cache) => (
                             <Col xs={24} sm={12} lg={8} key={cache.name}>
-                                <Card hoverable>
-                                    <Space
-                                        direction="vertical"
-                                        style={{ width: '100%' }}
-                                    >
-                                        <Space>
-                                            <Text
-                                                strong
-                                                style={{ fontSize: '18px' }}
-                                            >
-                                                {getPackageManagerIcon(
-                                                    cache.name
-                                                )}{' '}
-                                                {cache.name.toUpperCase()}
-                                            </Text>
+                                <Card hoverable style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                        <Space
+                                            direction="vertical"
+                                            style={{ width: '100%', flex: '1 1 auto' }}
+                                        >
+                                            <Space>
+                                                <Text
+                                                    strong
+                                                    style={{ fontSize: '18px' }}
+                                                >
+                                                    {getPackageManagerIcon(
+                                                        cache.name
+                                                    )}{' '}
+                                                    {cache.name.toUpperCase()}
+                                                </Text>
+                                                {cache.detected ? (
+                                                    <Tag color="green">已检测</Tag>
+                                                ) : (
+                                                    <Tag color="red">未检测</Tag>
+                                                )}
+                                            </Space>
+
                                             {cache.detected ? (
-                                                <Tag color="green">已检测</Tag>
+                                                <>
+                                                    <Text type="secondary">
+                                                        缓存大小:{' '}
+                                                        <Text strong>
+                                                            {formatFileSize(
+                                                                cache.size
+                                                            )}
+                                                        </Text>
+                                                    </Text>
+                                                    <div
+                                                        style={{ 
+                                                            fontSize: '12px',
+                                                            wordBreak: 'break-all',
+                                                            overflow: 'hidden',
+                                                            height: '40px',
+                                                            lineHeight: '20px',
+                                                            display: 'flex',
+                                                            alignItems: 'center'
+                                                        }}
+                                                    >
+                                                        <Text
+                                                            type="secondary"
+                                                            ellipsis={{ tooltip: cache.path }}
+                                                        >
+                                                            路径: {cache.path}
+                                                        </Text>
+                                                    </div>
+                                                </>
                                             ) : (
-                                                <Tag color="red">未检测</Tag>
+                                                <Alert
+                                                    message="未检测到该包管理器"
+                                                    description={
+                                                        cache.error ||
+                                                        '请确保已安装该包管理器'
+                                                    }
+                                                    type="warning"
+                                                    showIcon
+                                                />
                                             )}
                                         </Space>
-
-                                        {cache.detected ? (
-                                            <>
-                                                <Text type="secondary">
-                                                    缓存大小:{' '}
-                                                    <Text strong>
-                                                        {formatFileSize(
-                                                            cache.size
-                                                        )}
-                                                    </Text>
-                                                </Text>
-                                                <Text
-                                                    type="secondary"
-                                                    style={{ fontSize: '12px' }}
-                                                >
-                                                    路径: {cache.path}
-                                                </Text>
-                                            </>
-                                        ) : (
-                                            <Alert
-                                                message="未检测到该包管理器"
-                                                description={
-                                                    cache.error ||
-                                                    '请确保已安装该包管理器'
-                                                }
-                                                type="warning"
-                                                showIcon
-                                            />
-                                        )}
-                                    </Space>
+                                    </div>
 
                                     <div
                                         style={{
                                             marginTop: '16px',
                                             textAlign: 'center',
+                                            flex: '0 0 auto',
                                         }}
                                     >
                                         {!cache.detected || cache.size === 0 ? (
