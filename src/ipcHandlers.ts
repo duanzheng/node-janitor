@@ -2,320 +2,366 @@ import { ipcMain, dialog, IpcMainInvokeEvent } from 'electron';
 import fs from 'fs-extra';
 import path from 'path';
 import { execa } from 'execa';
-import { Project, Cache, IPCResult, DeleteResult, DeleteOperationResult, ConfirmDialogOptions } from './types';
+import {
+    Project,
+    Cache,
+    IPCResult,
+    DeleteResult,
+    DeleteOperationResult,
+    ConfirmDialogOptions,
+} from './types';
 
-// 扫描指定目录下的Node.js项目
+// Scan Node.js projects in specified directory
 async function scanNodeProjects(rootPath: string): Promise<Project[]> {
-  const projects: Project[] = [];
-  
-  async function scanDirectory(dir: string): Promise<void> {
-    const items = await fs.readdir(dir, { withFileTypes: true });
-    
-    for (const item of items) {
-      const fullPath = path.join(dir, item.name);
-      
-      if (item.isDirectory()) {
-        // 检查是否包含package.json
-        const packageJsonPath = path.join(fullPath, 'package.json');
-        if (await fs.pathExists(packageJsonPath)) {
-          const nodeModulesPath = path.join(fullPath, 'node_modules');
-          let nodeModulesSize = 0;
-          let lastModified = 0;
-          
-          try {
-            // 获取node_modules大小
-            if (await fs.pathExists(nodeModulesPath)) {
-              nodeModulesSize = await getDirectorySize(nodeModulesPath);
+    const projects: Project[] = [];
+
+    async function scanDirectory(dir: string): Promise<void> {
+        const items = await fs.readdir(dir, { withFileTypes: true });
+
+        for (const item of items) {
+            const fullPath = path.join(dir, item.name);
+
+            if (item.isDirectory()) {
+                // Check if contains package.json
+                const packageJsonPath = path.join(fullPath, 'package.json');
+                if (await fs.pathExists(packageJsonPath)) {
+                    const nodeModulesPath = path.join(fullPath, 'node_modules');
+                    let nodeModulesSize = 0;
+                    let lastModified = 0;
+
+                    try {
+                        // Get node_modules size
+                        if (await fs.pathExists(nodeModulesPath)) {
+                            nodeModulesSize =
+                                await getDirectorySize(nodeModulesPath);
+                        }
+
+                        // Get project last modified time
+                        const stats = await fs.stat(fullPath);
+                        lastModified = stats.mtime.getTime();
+
+                        projects.push({
+                            name: item.name,
+                            path: fullPath,
+                            nodeModulesSize,
+                            lastModified,
+                            hasNodeModules:
+                                await fs.pathExists(nodeModulesPath),
+                        });
+                    } catch (error) {
+                        console.error(`Error scanning ${fullPath}:`, error);
+                    }
+                } else {
+                    // Recursively scan subdirectories
+                    await scanDirectory(fullPath);
+                }
             }
-            
-            // 获取项目最后修改时间
-            const stats = await fs.stat(fullPath);
-            lastModified = stats.mtime.getTime();
-            
-            projects.push({
-              name: item.name,
-              path: fullPath,
-              nodeModulesSize,
-              lastModified,
-              hasNodeModules: await fs.pathExists(nodeModulesPath)
-            });
-          } catch (error) {
-            console.error(`Error scanning ${fullPath}:`, error);
-          }
-        } else {
-          // 递归扫描子目录
-          await scanDirectory(fullPath);
         }
-      }
     }
-  }
-  
-  await scanDirectory(rootPath);
-  return projects;
+
+    await scanDirectory(rootPath);
+    return projects;
 }
 
-// 计算目录大小
+// Calculate directory size
 async function getDirectorySize(dirPath: string): Promise<number> {
-  let totalSize = 0;
-  
-  async function calculateSize(dir: string): Promise<void> {
-    try {
-      const items = await fs.readdir(dir, { withFileTypes: true });
-      
-      for (const item of items) {
-        const fullPath = path.join(dir, item.name);
-        
+    let totalSize = 0;
+
+    async function calculateSize(dir: string): Promise<void> {
         try {
-          if (item.isDirectory()) {
-            await calculateSize(fullPath);
-          } else {
-            const stats = await fs.stat(fullPath);
-            totalSize += stats.size;
-          }
+            const items = await fs.readdir(dir, { withFileTypes: true });
+
+            for (const item of items) {
+                const fullPath = path.join(dir, item.name);
+
+                try {
+                    if (item.isDirectory()) {
+                        await calculateSize(fullPath);
+                    } else {
+                        const stats = await fs.stat(fullPath);
+                        totalSize += stats.size;
+                    }
+                } catch (error) {
+                    console.log(
+                        `Error accessing ${fullPath}:`,
+                        (error as Error).message
+                    );
+                    // Continue processing other files
+                }
+            }
         } catch (error) {
-          console.log(`Error accessing ${fullPath}:`, (error as Error).message);
-          // 继续处理其他文件
+            console.log(
+                `Error reading directory ${dir}:`,
+                (error as Error).message
+            );
+            // If directory cannot be read, return 0
         }
-      }
-    } catch (error) {
-      console.log(`Error reading directory ${dir}:`, (error as Error).message);
-      // 如果目录无法读取，返回0
     }
-  }
-  
-  try {
-    await calculateSize(dirPath);
-  } catch (error) {
-    console.log(`Error calculating size for ${dirPath}:`, (error as Error).message);
-    return 0;
-  }
-  
-  return totalSize;
-}
 
-// 删除node_modules目录
-async function deleteNodeModules(projectPaths: string[]): Promise<DeleteResult> {
-  const results: DeleteOperationResult[] = [];
-  
-  for (const projectPath of projectPaths) {
-    const nodeModulesPath = path.join(projectPath, 'node_modules');
-    
     try {
-      if (await fs.pathExists(nodeModulesPath)) {
-        await fs.remove(nodeModulesPath);
-        results.push({
-          path: projectPath,
-          success: true,
-          message: 'Successfully deleted node_modules'
-        });
-      } else {
-        results.push({
-          path: projectPath,
-          success: false,
-          message: 'node_modules not found'
-        });
-      }
+        await calculateSize(dirPath);
     } catch (error) {
-      results.push({
-        path: projectPath,
-        success: false,
-        message: (error as Error).message
-      });
+        console.log(
+            `Error calculating size for ${dirPath}:`,
+            (error as Error).message
+        );
+        return 0;
     }
-  }
-  
-  return { success: true, results };
+
+    return totalSize;
 }
 
-// 检测包管理器缓存
+// Delete node_modules directories
+async function deleteNodeModules(
+    projectPaths: string[]
+): Promise<DeleteResult> {
+    const results: DeleteOperationResult[] = [];
+
+    for (const projectPath of projectPaths) {
+        const nodeModulesPath = path.join(projectPath, 'node_modules');
+
+        try {
+            if (await fs.pathExists(nodeModulesPath)) {
+                await fs.remove(nodeModulesPath);
+                results.push({
+                    path: projectPath,
+                    success: true,
+                    message: 'Successfully deleted node_modules',
+                });
+            } else {
+                results.push({
+                    path: projectPath,
+                    success: false,
+                    message: 'node_modules not found',
+                });
+            }
+        } catch (error) {
+            results.push({
+                path: projectPath,
+                success: false,
+                message: (error as Error).message,
+            });
+        }
+    }
+
+    return { success: true, results };
+}
+
+// Detect package manager caches
 async function detectPackageManagerCaches(): Promise<Cache[]> {
-  const caches: Cache[] = [];
-  
-  // 检测npm缓存
-  try {
-    const { stdout: npmCachePath } = await execa('npm', ['config', 'get', 'cache']);
-    const npmCacheSize = await getDirectorySize(npmCachePath.trim());
-    caches.push({
-      name: 'npm',
-      path: npmCachePath.trim(),
-      size: npmCacheSize,
-      detected: true
-    });
-  } catch (error) {
-    caches.push({
-      name: 'npm',
-      path: '',
-      size: 0,
-      detected: false,
-      error: (error as Error).message
-    });
-  }
-  
-  // 检测yarn缓存
-  try {
-    // 首先检查系统PATH
-    const { stdout: whichYarn } = await execa('which', ['yarn']);
-    const yarnPath = whichYarn.trim();
-    
-    // 使用完整路径调用yarn
-    const { stdout: yarnCachePath } = await execa(yarnPath, ['cache', 'dir']);
-    
-    const yarnCacheSize = await getDirectorySize(yarnCachePath.trim());
-    caches.push({
-      name: 'yarn',
-      path: yarnCachePath.trim(),
-      size: yarnCacheSize,
-      detected: true
-    });
-  } catch (error) {
-    caches.push({
-      name: 'yarn',
-      path: '',
-      size: 0,
-      detected: false,
-      error: (error as Error).message
-    });
-  }
-  
-  // 检测pnpm缓存
-  try {
-    const { stdout: pnpmCachePath } = await execa('pnpm', ['store', 'path']);
-    const pnpmCacheSize = await getDirectorySize(pnpmCachePath.trim());
-    caches.push({
-      name: 'pnpm',
-      path: pnpmCachePath.trim(),
-      size: pnpmCacheSize,
-      detected: true
-    });
-  } catch (error) {
-    caches.push({
-      name: 'pnpm',
-      path: '',
-      size: 0,
-      detected: false,
-      error: (error as Error).message
-    });
-  }
-  
-  return caches;
-}
+    const caches: Cache[] = [];
 
-// 清理包管理器缓存
-async function cleanPackageManagerCache(packageManager: string): Promise<IPCResult> {
-  try {
-    switch (packageManager) {
-      case 'npm':
-        await execa('npm', ['cache', 'clean', '--force']);
-        break;
-      case 'yarn':
-        await execa('yarn', ['cache', 'clean']);
-        break;
-      case 'pnpm':
-        await execa('pnpm', ['store', 'prune']);
-        break;
-      default:
-        throw new Error(`Unsupported package manager: ${packageManager}`);
+    // Detect npm cache
+    try {
+        const { stdout: npmCachePath } = await execa('npm', [
+            'config',
+            'get',
+            'cache',
+        ]);
+        const npmCacheSize = await getDirectorySize(npmCachePath.trim());
+        caches.push({
+            name: 'npm',
+            path: npmCachePath.trim(),
+            size: npmCacheSize,
+            detected: true,
+        });
+    } catch (error) {
+        caches.push({
+            name: 'npm',
+            path: '',
+            size: 0,
+            detected: false,
+            error: (error as Error).message,
+        });
     }
-    
-    // 重新检测缓存大小，确保清理生效
-    const caches = await detectPackageManagerCaches();
-    const cache = caches.find(c => c.name === packageManager);
-    const newSize = cache ? cache.size : 0;
-    
-    return {
-      success: true,
-      message: `Successfully cleaned ${packageManager} cache. New size: ${newSize}`
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: (error as Error).message
-    };
-  }
+
+    // Detect yarn cache
+    try {
+        // First check system PATH
+        const { stdout: whichYarn } = await execa('which', ['yarn']);
+        const yarnPath = whichYarn.trim();
+
+        // Use full path to call yarn
+        const { stdout: yarnCachePath } = await execa(yarnPath, [
+            'cache',
+            'dir',
+        ]);
+
+        const yarnCacheSize = await getDirectorySize(yarnCachePath.trim());
+        caches.push({
+            name: 'yarn',
+            path: yarnCachePath.trim(),
+            size: yarnCacheSize,
+            detected: true,
+        });
+    } catch (error) {
+        caches.push({
+            name: 'yarn',
+            path: '',
+            size: 0,
+            detected: false,
+            error: (error as Error).message,
+        });
+    }
+
+    // Detect pnpm cache
+    try {
+        const { stdout: pnpmCachePath } = await execa('pnpm', [
+            'store',
+            'path',
+        ]);
+        const pnpmCacheSize = await getDirectorySize(pnpmCachePath.trim());
+        caches.push({
+            name: 'pnpm',
+            path: pnpmCachePath.trim(),
+            size: pnpmCacheSize,
+            detected: true,
+        });
+    } catch (error) {
+        caches.push({
+            name: 'pnpm',
+            path: '',
+            size: 0,
+            detected: false,
+            error: (error as Error).message,
+        });
+    }
+
+    return caches;
 }
 
-// 设置IPC处理器
+// Clean package manager cache
+async function cleanPackageManagerCache(
+    packageManager: string
+): Promise<IPCResult> {
+    try {
+        switch (packageManager) {
+            case 'npm':
+                await execa('npm', ['cache', 'clean', '--force']);
+                break;
+            case 'yarn':
+                await execa('yarn', ['cache', 'clean']);
+                break;
+            case 'pnpm':
+                await execa('pnpm', ['store', 'prune']);
+                break;
+            default:
+                throw new Error(
+                    `Unsupported package manager: ${packageManager}`
+                );
+        }
+
+        // Re-detect cache size to ensure cleanup took effect
+        const caches = await detectPackageManagerCaches();
+        const cache = caches.find((c) => c.name === packageManager);
+        const newSize = cache ? cache.size : 0;
+
+        return {
+            success: true,
+            message: `Successfully cleaned ${packageManager} cache. New size: ${newSize}`,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: (error as Error).message,
+        };
+    }
+}
+
+// Setup IPC handlers
 function setupIPCHandlers(): void {
-  // 选择目录
-  ipcMain.handle('select-directory', async () => {
-    const result = await dialog.showOpenDialog({
-      properties: ['openDirectory']
+    // Select directory
+    ipcMain.handle('select-directory', async () => {
+        const result = await dialog.showOpenDialog({
+            properties: ['openDirectory'],
+        });
+
+        if (result.canceled) {
+            return null;
+        }
+
+        return result.filePaths[0];
     });
-    
-    if (result.canceled) {
-      return null;
-    }
-    
-    return result.filePaths[0];
-  });
-  
-  // 扫描项目
-  ipcMain.handle('scan-projects', async (_: IpcMainInvokeEvent, rootPath: string) => {
-    try {
-      const projects = await scanNodeProjects(rootPath);
-      return { success: true, projects };
-    } catch (error) {
-      console.error('Scan projects error:', error);
-      return { success: false, error: (error as Error).message };
-    }
-  });
-  
-  // 删除node_modules
-  ipcMain.handle('delete-node-modules', async (_: IpcMainInvokeEvent, projectPaths: string[]) => {
-    try {
-      const results = await deleteNodeModules(projectPaths);
-      return results;
-    } catch (error) {
-      console.error('Delete node modules error:', error);
-      return { success: false, error: (error as Error).message };
-    }
-  });
-  
-  // 检测缓存
-  ipcMain.handle('detect-caches', async () => {
-    try {
-      const caches = await detectPackageManagerCaches();
-      return { success: true, caches };
-    } catch (error) {
-      console.error('Detect caches error:', error);
-      return { success: false, error: (error as Error).message };
-    }
-  });
-  
-  // 清理缓存
-  ipcMain.handle('clean-cache', async (_: IpcMainInvokeEvent, packageManager: string) => {
-    try {
-      const result = await cleanPackageManagerCache(packageManager);
-      return result;
-    } catch (error) {
-      console.error('Clean cache error:', error);
-      return { success: false, error: (error as Error).message };
-    }
-  });
-  
-  // 显示确认对话框
-  ipcMain.handle('show-confirm-dialog', async (_: IpcMainInvokeEvent, options: ConfirmDialogOptions) => {
-    try {
-      const result = await dialog.showMessageBox({
-        type: 'question',
-        title: options.title,
-        message: options.message,
-        buttons: options.buttons,
-        defaultId: 0,
-        cancelId: 1
-      });
-      return result.response === 0; // 返回用户是否点击了第一个按钮（确认）
-    } catch (error) {
-      console.error('Show confirm dialog error:', error);
-      return false;
-    }
-  });
+
+    // Scan projects
+    ipcMain.handle(
+        'scan-projects',
+        async (_: IpcMainInvokeEvent, rootPath: string) => {
+            try {
+                const projects = await scanNodeProjects(rootPath);
+                return { success: true, projects };
+            } catch (error) {
+                console.error('Scan projects error:', error);
+                return { success: false, error: (error as Error).message };
+            }
+        }
+    );
+
+    // Delete node_modules
+    ipcMain.handle(
+        'delete-node-modules',
+        async (_: IpcMainInvokeEvent, projectPaths: string[]) => {
+            try {
+                const results = await deleteNodeModules(projectPaths);
+                return results;
+            } catch (error) {
+                console.error('Delete node modules error:', error);
+                return { success: false, error: (error as Error).message };
+            }
+        }
+    );
+
+    // Detect cache
+    ipcMain.handle('detect-caches', async () => {
+        try {
+            const caches = await detectPackageManagerCaches();
+            return { success: true, caches };
+        } catch (error) {
+            console.error('Detect caches error:', error);
+            return { success: false, error: (error as Error).message };
+        }
+    });
+
+    // Clean cache
+    ipcMain.handle(
+        'clean-cache',
+        async (_: IpcMainInvokeEvent, packageManager: string) => {
+            try {
+                const result = await cleanPackageManagerCache(packageManager);
+                return result;
+            } catch (error) {
+                console.error('Clean cache error:', error);
+                return { success: false, error: (error as Error).message };
+            }
+        }
+    );
+
+    // Show confirmation dialog
+    ipcMain.handle(
+        'show-confirm-dialog',
+        async (_: IpcMainInvokeEvent, options: ConfirmDialogOptions) => {
+            try {
+                const result = await dialog.showMessageBox({
+                    type: 'question',
+                    title: options.title,
+                    message: options.message,
+                    buttons: options.buttons,
+                    defaultId: 0,
+                    cancelId: 1,
+                });
+                return result.response === 0; // Return whether user clicked the first button (confirm)
+            } catch (error) {
+                console.error('Show confirm dialog error:', error);
+                return false;
+            }
+        }
+    );
 }
 
 export {
-  setupIPCHandlers,
-  detectPackageManagerCaches,
-  scanNodeProjects,
-  deleteNodeModules,
-  cleanPackageManagerCache
+    setupIPCHandlers,
+    detectPackageManagerCaches,
+    scanNodeProjects,
+    deleteNodeModules,
+    cleanPackageManagerCache,
 };

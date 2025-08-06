@@ -29,7 +29,7 @@ const ProjectCleaner: React.FC = () => {
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
     const [cleaning, setCleaning] = useState<boolean>(false);
 
-    // 选择目录
+    // Select directory
     const handleSelectDirectory = async () => {
         try {
             const path = await window.electronAPI.selectDirectory();
@@ -37,14 +37,14 @@ const ProjectCleaner: React.FC = () => {
                 setSelectedPath(path);
             }
         } catch (error) {
-            message.error('选择目录失败');
+            message.error('Failed to select directory');
         }
     };
 
-    // 扫描项目
+    // Scan projects
     const handleScanProjects = async () => {
         if (!selectedPath) {
-            message.warning('请先选择目录');
+            message.warning('Please select a directory first');
             return;
         }
 
@@ -54,22 +54,22 @@ const ProjectCleaner: React.FC = () => {
             if (result.success && result.projects) {
                 setProjects(result.projects);
                 message.success(
-                    `扫描完成，发现 ${result.projects.length} 个项目`
+                    `Scan completed, found ${result.projects.length} projects`
                 );
             } else {
-                message.error(`扫描失败: ${result.error}`);
+                message.error(`Scan failed: ${result.error}`);
             }
         } catch (error) {
-            message.error('扫描失败');
+            message.error('Scan failed');
         } finally {
             setScanning(false);
         }
     };
 
-    // 删除node_modules
+    // Delete node_modules
     const handleDeleteNodeModules = async () => {
         if (selectedRowKeys.length === 0) {
-            message.warning('请选择要清理的项目');
+            message.warning('Please select projects to clean');
             return;
         }
 
@@ -84,13 +84,13 @@ const ProjectCleaner: React.FC = () => {
                 await window.electronAPI.deleteNodeModules(selectedRowKeys);
 
             if (result.success) {
-                // 检查具体的项目清理结果
+                // Check specific project cleanup results
                 const successfulDeletions =
                     result.results?.filter((r) => r.success).length || 0;
                 const failedDeletions =
                     result.results?.filter((r) => !r.success).length || 0;
 
-                // 更新项目状态
+                // Update project status
                 const updatedProjects = projects.map((project) => {
                     if (selectedRowKeys.includes(project.path)) {
                         const operationResult = result.results?.find(
@@ -111,25 +111,25 @@ const ProjectCleaner: React.FC = () => {
 
                 if (failedDeletions === 0) {
                     message.success(
-                        `清理成功！共释放 ${formatFileSize(totalSize)} 空间`
+                        `Cleanup successful! Freed ${formatFileSize(totalSize)} of space`
                     );
                 } else {
                     message.warning(
-                        `部分清理成功：${successfulDeletions} 个项目成功，${failedDeletions} 个项目失败`
+                        `Partial cleanup successful: ${successfulDeletions} projects succeeded, ${failedDeletions} projects failed`
                     );
                 }
             } else {
-                message.error(`清理失败: ${result.error}`);
+                message.error(`Cleanup failed: ${result.error}`);
             }
         } catch (error) {
             console.error('Delete error:', error);
-            message.error('清理失败');
+            message.error('Cleanup failed');
         } finally {
             setCleaning(false);
         }
     };
 
-    // 表格列配置
+    // Table column configuration
     const columns = [
         {
             title: '',
@@ -150,18 +150,18 @@ const ProjectCleaner: React.FC = () => {
             ),
         },
         {
-            title: '项目名称',
+            title: 'Project Name',
             dataIndex: 'name',
             key: 'name',
             render: (text: string, record: Project) => (
                 <Space>
                     <Text strong>{text}</Text>
-                    {!record.hasNodeModules && <Tag color="green">已清理</Tag>}
+                    {!record.hasNodeModules && <Tag color="green">Cleaned</Tag>}
                 </Space>
             ),
         },
         {
-            title: 'node_modules 大小',
+            title: 'node_modules Size',
             dataIndex: 'nodeModulesSize',
             key: 'nodeModulesSize',
             render: (size: number) => formatFileSize(size),
@@ -169,7 +169,7 @@ const ProjectCleaner: React.FC = () => {
                 a.nodeModulesSize - b.nodeModulesSize,
         },
         {
-            title: '最近修改时间',
+            title: 'Last Modified',
             dataIndex: 'lastModified',
             key: 'lastModified',
             render: (timestamp: number) => formatDate(timestamp),
@@ -177,14 +177,14 @@ const ProjectCleaner: React.FC = () => {
             defaultSortOrder: 'ascend' as const,
         },
         {
-            title: '完整路径',
+            title: 'Full Path',
             dataIndex: 'path',
             key: 'path',
             ellipsis: true,
         },
     ];
 
-    // 全选/取消全选
+    // Select all / Deselect all
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
             const selectableProjects = projects.filter((p) => p.hasNodeModules);
@@ -202,16 +202,17 @@ const ProjectCleaner: React.FC = () => {
     return (
         <div style={{ padding: '24px' }}>
             <Card>
-                <Title level={3}>项目清理</Title>
+                <Title level={3}>Project Cleaner</Title>
                 <Text type="secondary">
-                    扫描指定目录下所有的 Node.js 项目，分析其 node_modules
-                    目录的大小并提供清理功能
+                    Scan all Node.js projects in the specified directory,
+                    analyze the size of their node_modules directories and
+                    provide cleanup functionality
                 </Text>
 
                 <Space style={{ marginTop: '16px', marginBottom: '24px' }}>
                     <Input
                         value={selectedPath}
-                        placeholder="选择要扫描的根目录"
+                        placeholder="Select root directory to scan"
                         style={{ width: '400px' }}
                         readOnly
                     />
@@ -219,7 +220,7 @@ const ProjectCleaner: React.FC = () => {
                         icon={<FolderOpenOutlined />}
                         onClick={handleSelectDirectory}
                     >
-                        选择目录
+                        Select Directory
                     </Button>
                     <Button
                         type="primary"
@@ -228,7 +229,7 @@ const ProjectCleaner: React.FC = () => {
                         loading={scanning}
                         disabled={!selectedPath}
                     >
-                        开始扫描
+                        Start Scan
                     </Button>
                 </Space>
 
@@ -251,19 +252,19 @@ const ProjectCleaner: React.FC = () => {
                                     handleSelectAll(e.target.checked)
                                 }
                             >
-                                全选
+                                Select All
                             </Checkbox>
                             <Text>
-                                已选择 {selectedProjects.length}{' '}
-                                个项目，预计可释放 {formatFileSize(totalSize)}{' '}
-                                空间
+                                Selected {selectedProjects.length} projects,
+                                estimated to free {formatFileSize(totalSize)} of
+                                space
                             </Text>
                             <Popconfirm
-                                title="确认清理"
-                                description={`即将删除 ${selectedProjects.length} 个项目中的 node_modules 目录，预计释放 ${formatFileSize(totalSize)} 空间。此操作不可撤销，是否继续？`}
+                                title="Confirm Cleanup"
+                                description={`About to delete node_modules directories from ${selectedProjects.length} projects, estimated to free ${formatFileSize(totalSize)} of space. This operation cannot be undone, continue?`}
                                 onConfirm={handleDeleteNodeModules}
-                                okText="确认删除"
-                                cancelText="取消"
+                                okText="Confirm Delete"
+                                cancelText="Cancel"
                                 disabled={selectedRowKeys.length === 0}
                             >
                                 <Button
@@ -273,7 +274,7 @@ const ProjectCleaner: React.FC = () => {
                                     loading={cleaning}
                                     disabled={selectedRowKeys.length === 0}
                                 >
-                                    清理选中项目
+                                    Clean Selected Projects
                                 </Button>
                             </Popconfirm>
                         </Space>
@@ -288,7 +289,8 @@ const ProjectCleaner: React.FC = () => {
                         pagination={{ pageSize: 10 }}
                         scroll={{ x: 800 }}
                         locale={{
-                            emptyText: '暂无项目数据，请先选择目录并扫描',
+                            emptyText:
+                                'No project data, please select a directory and scan first',
                         }}
                     />
                 </Spin>

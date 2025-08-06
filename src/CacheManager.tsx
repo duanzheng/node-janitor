@@ -12,10 +12,7 @@ import {
     Tag,
     Alert,
 } from 'antd';
-import {
-    DeleteOutlined,
-    ReloadOutlined,
-} from '@ant-design/icons';
+import { DeleteOutlined, ReloadOutlined } from '@ant-design/icons';
 import { formatFileSize, getPackageManagerIcon } from './utils';
 import { Cache } from './types';
 
@@ -26,7 +23,7 @@ const CacheManager: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [cleaning, setCleaning] = useState<{ [key: string]: boolean }>({});
 
-    // 检测缓存
+    // Detect caches
     const handleDetectCaches = async () => {
         setLoading(true);
         try {
@@ -34,16 +31,16 @@ const CacheManager: React.FC = () => {
             if (result.success && result.caches) {
                 setCaches(result.caches);
             } else {
-                message.error(`检测失败: ${result.error}`);
+                message.error(`Detection failed: ${result.error}`);
             }
         } catch (error) {
-            message.error('检测失败');
+            message.error('Detection failed');
         } finally {
             setLoading(false);
         }
     };
 
-    // 清理缓存
+    // Clean cache
     const handleCleanCache = async (packageManager: string) => {
         const cache = caches.find((c) => c.name === packageManager);
         if (!cache || !cache.detected) {
@@ -55,27 +52,27 @@ const CacheManager: React.FC = () => {
             const result = await window.electronAPI.cleanCache(packageManager);
 
             if (result.success) {
-                // 直接更新状态，不重新检测
-                setCaches(prevCaches => 
-                    prevCaches.map(c => 
-                        c.name === packageManager 
-                            ? { ...c, size: 0 } 
-                            : c
+                // Update state directly, don't re-detect
+                setCaches((prevCaches) =>
+                    prevCaches.map((c) =>
+                        c.name === packageManager ? { ...c, size: 0 } : c
                     )
                 );
-                message.success(`${packageManager.toUpperCase()} 缓存清理成功`);
+                message.success(
+                    `${packageManager.toUpperCase()} cache cleaned successfully`
+                );
             } else {
-                message.error(`清理失败: ${result.message}`);
+                message.error(`Cleanup failed: ${result.message}`);
             }
         } catch (error) {
             console.error('Clean cache error:', error);
-            message.error('清理失败');
+            message.error('Cleanup failed');
         } finally {
             setCleaning((prev) => ({ ...prev, [packageManager]: false }));
         }
     };
 
-    // 组件加载时自动检测缓存
+    // Auto-detect caches when component loads
     useEffect(() => {
         handleDetectCaches();
     }, []);
@@ -83,9 +80,11 @@ const CacheManager: React.FC = () => {
     return (
         <div style={{ padding: '24px' }}>
             <Card>
-                <Title level={3}>缓存管理</Title>
+                <Title level={3}>Cache Manager</Title>
                 <Text type="secondary">
-                    自动检测并显示主流包管理器的缓存大小，并提供一键清理功能
+                    Automatically detect and display cache sizes for mainstream
+                    package managers, and provide one-click cleanup
+                    functionality
                 </Text>
 
                 <div style={{ marginTop: '16px', marginBottom: '24px' }}>
@@ -94,7 +93,7 @@ const CacheManager: React.FC = () => {
                         onClick={handleDetectCaches}
                         loading={loading}
                     >
-                        重新检测
+                        Re-detect
                     </Button>
                 </div>
 
@@ -102,11 +101,28 @@ const CacheManager: React.FC = () => {
                     <Row gutter={[16, 16]}>
                         {caches.map((cache) => (
                             <Col xs={24} sm={12} lg={8} key={cache.name}>
-                                <Card hoverable style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                <Card
+                                    hoverable
+                                    style={{
+                                        height: '100%',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            flex: 1,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            minHeight: 0,
+                                        }}
+                                    >
                                         <Space
                                             direction="vertical"
-                                            style={{ width: '100%', flex: '1 1 auto' }}
+                                            style={{
+                                                width: '100%',
+                                                flex: '1 1 auto',
+                                            }}
                                         >
                                             <Space>
                                                 <Text
@@ -119,16 +135,20 @@ const CacheManager: React.FC = () => {
                                                     {cache.name.toUpperCase()}
                                                 </Text>
                                                 {cache.detected ? (
-                                                    <Tag color="green">已检测</Tag>
+                                                    <Tag color="green">
+                                                        Detected
+                                                    </Tag>
                                                 ) : (
-                                                    <Tag color="red">未检测</Tag>
+                                                    <Tag color="red">
+                                                        Not Detected
+                                                    </Tag>
                                                 )}
                                             </Space>
 
                                             {cache.detected ? (
                                                 <>
                                                     <Text type="secondary">
-                                                        缓存大小:{' '}
+                                                        Cache Size:{' '}
                                                         <Text strong>
                                                             {formatFileSize(
                                                                 cache.size
@@ -136,30 +156,35 @@ const CacheManager: React.FC = () => {
                                                         </Text>
                                                     </Text>
                                                     <div
-                                                        style={{ 
+                                                        style={{
                                                             fontSize: '12px',
-                                                            wordBreak: 'break-all',
+                                                            wordBreak:
+                                                                'break-all',
                                                             overflow: 'hidden',
                                                             height: '40px',
                                                             lineHeight: '20px',
                                                             display: 'flex',
-                                                            alignItems: 'center'
+                                                            alignItems:
+                                                                'center',
                                                         }}
                                                     >
                                                         <Text
                                                             type="secondary"
-                                                            ellipsis={{ tooltip: cache.path }}
+                                                            ellipsis={{
+                                                                tooltip:
+                                                                    cache.path,
+                                                            }}
                                                         >
-                                                            路径: {cache.path}
+                                                            Path: {cache.path}
                                                         </Text>
                                                     </div>
                                                 </>
                                             ) : (
                                                 <Alert
-                                                    message="未检测到该包管理器"
+                                                    message="Package manager not detected"
                                                     description={
                                                         cache.error ||
-                                                        '请确保已安装该包管理器'
+                                                        'Please ensure the package manager is installed'
                                                     }
                                                     type="warning"
                                                     showIcon
@@ -183,17 +208,17 @@ const CacheManager: React.FC = () => {
                                                 disabled={true}
                                                 style={{ width: '100%' }}
                                             >
-                                                清理缓存
+                                                Clean Cache
                                             </Button>
                                         ) : (
                                             <Popconfirm
-                                                title="确认清理"
-                                                description={`即将清理 ${cache.name.toUpperCase()} 的缓存，预计释放 ${formatFileSize(cache.size)} 空间。此操作不可撤销，是否继续？`}
+                                                title="Confirm Cleanup"
+                                                description={`About to clean ${cache.name.toUpperCase()} cache, estimated to free ${formatFileSize(cache.size)} of space. This operation cannot be undone, continue?`}
                                                 onConfirm={() =>
                                                     handleCleanCache(cache.name)
                                                 }
-                                                okText="确认清理"
-                                                cancelText="取消"
+                                                okText="Confirm Cleanup"
+                                                cancelText="Cancel"
                                             >
                                                 <Button
                                                     type="primary"
@@ -204,7 +229,7 @@ const CacheManager: React.FC = () => {
                                                     }
                                                     style={{ width: '100%' }}
                                                 >
-                                                    清理缓存
+                                                    Clean Cache
                                                 </Button>
                                             </Popconfirm>
                                         )}
