@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn add:*)",
+      "Bash(yarn build:*)",
+      "Bash(yarn start:*)",
+      "Bash(pkill:*)",
+      "Bash(mv /Users/duanzheng/Documents/private-code/node-janitor/src/utils.js /Users/duanzheng/Documents/private-code/node-janitor/src/utils.ts)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm start:*)",
+      "Bash(cp:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(true:*)",
+      "Bash(osascript:*)",
+      "Bash(npx webpack:*)",
+      "Bash(tsc:*)",
+      "Bash(npx tsc:*)",
+      "Bash(yarn:*)",
+      "Bash(npm test)",
+      "Bash(npx jest:*)",
+      "mcp__ide__getDiagnostics"
+    ],
+    "deny": []
+  }
+}
