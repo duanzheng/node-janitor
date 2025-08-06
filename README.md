@@ -50,13 +50,13 @@ Node Janitor is a cross-platform desktop application built with Electron that he
 
 ### Download Pre-built Binaries
 
-**Latest Release: [v1.0.0](https://github.com/duanzheng/node-janitor/releases/latest)**
+**Latest Release: [v1.0.1](https://github.com/duanzheng/node-janitor/releases/latest)**
 
 Choose the appropriate download for your operating system:
 
 #### 🍎 **macOS**
 
-- Download `Node Janitor-darwin-arm64-1.0.0.zip` (Apple Silicon) or `Node Janitor-darwin-x64-1.0.0.zip` (Intel)
+- Download `Node Janitor-darwin-arm64-1.0.1.zip` (Apple Silicon) or `Node Janitor-darwin-x64-1.0.1.zip` (Intel)
 - Extract the zip file
 - Drag `Node Janitor.app` to your Applications folder
 - Right-click and select "Open" on first launch (due to macOS security)
@@ -69,8 +69,8 @@ Choose the appropriate download for your operating system:
 
 #### 🐧 **Linux**
 
-- **Debian/Ubuntu**: Download `.deb` file and run `sudo dpkg -i node-janitor_1.0.0_amd64.deb`
-- **Red Hat/Fedora**: Download `.rpm` file and run `sudo rpm -i node-janitor-1.0.0.x86_64.rpm`
+- **Debian/Ubuntu**: Download `.deb` file and run `sudo dpkg -i node-janitor_1.0.1_amd64.deb`
+- **Red Hat/Fedora**: Download `.rpm` file and run `sudo rpm -i node-janitor-1.0.1.x86_64.rpm`
 - Or use your distribution's package manager
 
 ### System Requirements
