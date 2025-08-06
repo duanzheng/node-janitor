@@ -153,7 +153,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **TonyDuan**
 
 - Email: duanzheng21518@gmail.com
-- GitHub: [@yourusername](https://github.com/yourusername)
+- GitHub: [@duanzheng](https://github.com/duanzheng)
 
 ## 🙏 Acknowledgments
 
