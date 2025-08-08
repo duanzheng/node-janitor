@@ -83,8 +83,8 @@ jobs:
     name: Windows build
     runs-on: windows-latest
     env:
-      YARN_CACHE_FOLDER: ${{ runner.temp }}/yarn-cache
-      ELECTRON_CACHE: ${{ runner.temp }}/electron-cache
+      YARN_CACHE_FOLDER: ${{ github.workspace }}/.yarn-cache
+      ELECTRON_CACHE: ${{ github.workspace }}/.electron-cache
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -138,8 +138,8 @@ jobs:
     name: Linux build
     runs-on: ubuntu-latest
     env:
-      YARN_CACHE_FOLDER: ${{ runner.temp }}/yarn-cache
-      ELECTRON_CACHE: ${{ runner.temp }}/electron-cache
+      YARN_CACHE_FOLDER: ${{ github.workspace }}/.yarn-cache
+      ELECTRON_CACHE: ${{ github.workspace }}/.electron-cache
     steps:
       - name: Checkout
         uses: actions/checkout@v4
