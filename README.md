@@ -1,38 +1,36 @@
 ## 🧹 Node Janitor
 
-让开发者快速释放磁盘空间的桌面工具：批量清理 `node_modules` 与包管理器缓存。
-
-A tiny desktop tool to reclaim disk space by cleaning `node_modules` and package manager caches.
+Free disk space fast: bulk‑clean `node_modules` and package manager caches.
 
 [Download Latest Release](https://github.com/duanzheng/node-janitor/releases/latest)
 
-### 面向用户：为什么用它
+### Why Node Janitor
 
-- **一键清理项目依赖**：扫描文件夹、列出项目、批量删除 `node_modules`
-- **清理包管理器缓存**：支持 npm / yarn / pnpm
-- **可见的空间收益**：清理前展示可回收空间
-- **默认安全**：删除前需确认，避免误操作
+- **Project cleanup**: Scan folders, list projects, bulk‑delete `node_modules`
+- **Cache cleanup**: Detect and clean npm / yarn / pnpm caches
+- **Space insight**: See estimated space to reclaim before cleaning
+- **Safe by default**: Confirmation before destructive actions
 
-### 安装（用户最关心）
+### Install
 
-- **macOS（推荐）**：一键下载安装，并自动处理隔离标记
+- **macOS (recommended)**: one‑line installer that downloads the latest DMG, mounts, installs to Applications, removes quarantine, and launches the app
 
   ```bash
   curl -fsSL https://raw.githubusercontent.com/duanzheng/node-janitor/main/scripts/install-macos.sh -o /tmp/install-node-janitor.sh
   bash /tmp/install-node-janitor.sh
   ```
 
-  说明：脚本会自动识别芯片架构（Apple Silicon/Intel）、下载最新 DMG、挂载、复制到“应用程序”，并清理 `com.apple.quarantine` 后直接打开应用。
+  The script auto‑detects Apple Silicon vs Intel and picks the right artifact.
 
-- **Windows**: 从 [Releases](https://github.com/duanzheng/node-janitor/releases/latest) 下载 `.exe` 并安装
-- **Linux**: 从 [Releases](https://github.com/duanzheng/node-janitor/releases/latest) 下载 `.deb` 或 `.rpm` 并安装
+- **Windows**: download the `.exe` from the [latest release](https://github.com/duanzheng/node-janitor/releases/latest)
+- **Linux**: download the `.deb` or `.rpm` from the [latest release](https://github.com/duanzheng/node-janitor/releases/latest)
 
-### 使用（两分钟上手）
+### Use
 
-- **项目清理**：选择目录 → 扫描 → 勾选项目 → 清理 `node_modules`
-- **缓存清理**：自动检测 npm/yarn/pnpm → 选择要清理的缓存 → 确认
+- **Project Cleaner**: choose a folder → scan → select projects → clean `node_modules`
+- **Cache Manager**: detect npm/yarn/pnpm → select caches → confirm clean
 
-### 面向开发者：快速上手
+### Developer quick start
 
 ```bash
 # Clone & install
@@ -46,6 +44,6 @@ yarn dev
 yarn make
 ```
 
-### 📄 License
+### License
 
 MIT
