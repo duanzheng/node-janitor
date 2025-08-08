@@ -65,6 +65,11 @@ module.exports = [
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
+  // Node/CommonJS 环境（脚本目录）
+  {
+    files: ['scripts/**/*.js'],
+    languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } },
+  },
   // 对所有 JS 文件关闭 TS 的 require 限制（若被上游启用时兜底）
   {
     files: ['**/*.{js,cjs,mjs}', '*.{js,cjs,mjs}'],
