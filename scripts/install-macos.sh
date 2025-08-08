@@ -10,6 +10,7 @@ REPO="duanzheng/node-janitor"
 APP_NAME="Node Janitor.app"
 INSTALL_DIR="/Applications"
 DMG_PATH="${TMPDIR:-/tmp}/node-janitor-installer.dmg"
+MOUNT_DIR="${TMPDIR:-/tmp}/node-janitor-mount"
 
 info()  { printf "\033[1;34m[INFO]\033[0m %s\n"  "$*"; }
 success(){ printf "\033[1;32m[SUCCESS]\033[0m %s\n" "$*"; }
@@ -64,13 +65,15 @@ info "Downloading: $URL"
 curl -fL "$URL" -o "$DMG_PATH"
 
 info "Mounting DMG..."
-# Capture the volume mount point (last column containing /Volumes/...) 
-ATTACH_OUT=$(hdiutil attach -nobrowse "$DMG_PATH")
-VOLUME_PATH=$(printf '%s\n' "$ATTACH_OUT" | awk '/\/Volumes\// { vol=$NF } END { print vol }')
-if [ -z "$VOLUME_PATH" ] || [ ! -d "$VOLUME_PATH" ]; then
-  err "Failed to mount DMG. Output: $ATTACH_OUT"
+# Use a deterministic mountpoint to avoid parsing output and handle spaces safely
+mkdir -p "$MOUNT_DIR"
+# Detach if somehow already mounted at this path
+hdiutil detach "$MOUNT_DIR" >/dev/null 2>&1 || true
+if ! hdiutil attach -nobrowse -mountpoint "$MOUNT_DIR" "$DMG_PATH" >/dev/null; then
+  err "Failed to mount DMG at $MOUNT_DIR"
   exit 1
 fi
+VOLUME_PATH="$MOUNT_DIR"
 info "Mounted at: $VOLUME_PATH"
 
 APP_SOURCE="$VOLUME_PATH/$APP_NAME"
@@ -91,7 +94,11 @@ else
 fi
 
 info "Detaching DMG..."
-hdiutil detach "$VOLUME_PATH" || warn "Failed to detach. You can eject it from Finder later."
+if ! hdiutil detach "$VOLUME_PATH"; then
+  # Retry once after a short delay (files may still be in use)
+  sleep 1
+  hdiutil detach -force "$VOLUME_PATH" || warn "Failed to detach. You can eject it from Finder later."
+fi
 
 info "Clearing quarantine attribute..."
 if xattr -dr com.apple.quarantine "$TARGET_PATH" 2>/dev/null; then
