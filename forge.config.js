@@ -1,7 +1,45 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
+// Helper flags for conditional mac signing/notarization
+const isMac = process.platform === 'darwin';
+const shouldNotarize =
+    Boolean(process.env.APPLE_ID) &&
+    Boolean(process.env.APPLE_APP_SPECIFIC_PASSWORD) &&
+    Boolean(process.env.APPLE_TEAM_ID);
+const hasSigningIdentity = Boolean(
+    process.env.CSC_NAME || process.env.CSC_IDENTITY
+);
+
 module.exports = {
+    // 在 make 之后对生成的 .app 与 .dmg 执行 staple，避免用户侧出现“已损坏”
+    hooks: {
+        postMake: async (_forgeConfig, makeResults) => {
+            if (!isMac || !shouldNotarize) return;
+            const execa = require('execa');
+            const path = require('path');
+            const artifacts = makeResults
+                .flatMap((target) => target.artifacts)
+                .filter(
+                    (artifactPath) =>
+                        artifactPath.endsWith('.dmg') ||
+                        artifactPath.endsWith('.zip') ||
+                        artifactPath.endsWith('.app')
+                );
+            for (const artifact of artifacts) {
+                try {
+                    // 对 .app 及 .dmg 进行 staple
+                    await execa(
+                        'xcrun',
+                        ['stapler', 'staple', path.resolve(artifact)],
+                        { stdio: 'inherit' }
+                    );
+                } catch (e) {
+                    // 忽略无法 staple 的制品（例如 zip），不中断流程
+                }
+            }
+        },
+    },
     packagerConfig: {
         asar: {
             unpack: '**/{.**,**}/**/*.node',
@@ -13,6 +51,29 @@ module.exports = {
         executableName: 'node-janitor',
         // icon: './assets/icon', // 如果你有图标文件的话
         // Let webpack plugin handle ignores automatically
+        ...(isMac && hasSigningIdentity
+            ? {
+                  osxSign: {
+                      identity:
+                          process.env.CSC_NAME || process.env.CSC_IDENTITY,
+                      'hardened-runtime': true,
+                      entitlements: './assets/entitlements.mac.plist',
+                      'entitlements-inherit': './assets/entitlements.mac.plist',
+                      'gatekeeper-assess': false,
+                      // Timestamps are required for notarization
+                      timestamp: true,
+                  },
+              }
+            : {}),
+        ...(isMac && shouldNotarize
+            ? {
+                  osxNotarize: {
+                      appleId: process.env.APPLE_ID,
+                      appleIdPassword: process.env.APPLE_APP_SPECIFIC_PASSWORD,
+                      teamId: process.env.APPLE_TEAM_ID,
+                  },
+              }
+            : {}),
     },
     rebuildConfig: {},
     makers: [
@@ -22,6 +83,14 @@ module.exports = {
                 name: 'node-janitor',
                 setupExe: 'NodeJanitorSetup.exe',
                 // setupIcon: './assets/icon.ico', // Remove icon config until we have actual icon files
+            },
+        },
+        // macOS: 推荐 DMG 作为分发载体，支持粘贴公证（staple）
+        {
+            name: '@electron-forge/maker-dmg',
+            platforms: ['darwin'],
+            config: {
+                format: 'ULFO',
             },
         },
         {

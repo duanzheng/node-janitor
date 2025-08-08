@@ -15,7 +15,8 @@ jobs:
     
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # macos-13 (Intel, x64) + macos-latest (Apple Silicon, arm64)
+        os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
 
     steps:
       - name: Checkout code
@@ -44,11 +45,32 @@ jobs:
       - name: Run tests
         run: yarn test
 
+      # 可选：在 macOS Runner 上导入签名证书（如果配置了 Secrets）
+      - name: Import Apple signing certificate (optional)
+        if: runner.os == 'macOS' && secrets.MAC_CERT_P12 != ''
+        shell: bash
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+          security create-keychain -p "$MAC_CERT_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -t 3600 -l "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$MAC_CERT_PASSWORD" "$KEYCHAIN_PATH"
+          echo "$MAC_CERT_P12" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -k "$KEYCHAIN_PATH" -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychain -d user | sed s/\"//g)
+        env:
+          MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
+          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+
       - name: Build application
         run: yarn make
         env:
           CI: true
           NODE_ENV: production
+          # 下面这些变量用于 forge.config.js 自动启用签名与公证
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_NAME: ${{ secrets.CSC_NAME }}
 
       - name: Upload artifacts (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
@@ -67,11 +89,13 @@ jobs:
           path: out/make/**/*.exe
 
       - name: Upload artifacts (macOS)
-        if: matrix.os == 'macos-latest'
+        if: startsWith(matrix.os, 'macos')
         uses: actions/upload-artifact@v4
         with:
-          name: macos-builds
-          path: out/make/**/*.zip
+          name: macos-builds-${{ matrix.os }}
+          path: |
+            out/make/**/*.dmg
+            out/make/**/*.zip
 
   release:
     needs: build
@@ -92,7 +116,7 @@ jobs:
           files: |
             linux-builds/**/*
             windows-builds/**/*
-            macos-builds/**/*
+            macos-builds-*/**/*
           draft: false
           prerelease: false
           generate_release_notes: true

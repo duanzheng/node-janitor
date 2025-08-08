@@ -56,10 +56,9 @@ Choose the appropriate download for your operating system:
 
 #### 🍎 **macOS**
 
-- Download the `.zip` file (available for both Apple Silicon and Intel)
-- Extract the zip file
-- Drag `Node Janitor.app` to your Applications folder
-- Right-click and select "Open" on first launch (due to macOS security)
+- Prefer the signed & notarized `.dmg` (available for Apple Silicon and Intel)
+- Open the DMG and drag `Node Janitor.app` to Applications
+- If you downloaded `.zip`, you may need to right-click "Open" on first launch
 
 #### 🪟 **Windows**
 
@@ -179,18 +178,35 @@ This project uses automated releases via GitHub Actions:
 
 ```bash
 # Update version in package.json
-npm version patch  # or minor/major
+yarn version --patch   # or --minor / --major
 
-# Create and push tag
-git push origin main --tags
+# Push commit and tag
+git push origin main --follow-tags
 ```
 
 The GitHub Actions workflow will:
 
 1. ✅ Run tests on all platforms
-2. 🏗️ Build applications for macOS, Windows, and Linux
-3. 📦 Create platform-specific installers
-4. 🚀 Publish to GitHub Releases automatically
+2. 🏗️ Build applications for macOS (Intel + Apple Silicon), Windows, and Linux
+3. 🔏 Sign & Notarize macOS builds when credentials are provided
+4. 📦 Create platform-specific installers (DMG/ZIP/EXE/DEB/RPM)
+5. 🚀 Publish to GitHub Releases automatically
+
+### macOS Signing & Notarization (CI)
+
+Set these repository secrets to enable automatic signing & notarization:
+
+- `APPLE_ID`: Apple ID email
+- `APPLE_APP_SPECIFIC_PASSWORD`: App-specific password
+- `APPLE_TEAM_ID`: Developer Team ID
+- `CSC_NAME`: Certificate common name, e.g. `Developer ID Application: Your Name (TEAMID)`
+- `MAC_CERT_P12` (optional): Base64-encoded `Developer ID Application` certificate
+- `MAC_CERT_PASSWORD` (optional): Password for P12
+
+Notes:
+
+- When `APPLE_*` and `CSC_NAME` are present, the build will be signed with hardened runtime and sent for notarization. The workflow will staple tickets to DMG/APP.
+- If you do not provide credentials, macOS artifacts will still be built but may be blocked by Gatekeeper when downloaded from the internet.
 
 ## 🤝 Contributing
 
