@@ -1,7 +1,7 @@
 {
   "name": "node-janitor",
   "productName": "node-janitor",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "A powerful desktop application for cleaning Node.js project dependencies and package manager caches",
   "main": ".webpack/main",
   "scripts": {
