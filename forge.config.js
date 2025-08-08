@@ -65,6 +65,14 @@ module.exports = {
                   },
               }
             : {}),
+        // 可选：生成通用二进制（x64 + arm64）用于 Universal DMG
+        ...(isMac
+            ? {
+                  osxUniversal: {
+                      mergeASARs: true,
+                  },
+              }
+            : {}),
         ...(isMac && shouldNotarize
             ? {
                   osxNotarize: {

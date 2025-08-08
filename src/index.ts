@@ -26,8 +26,10 @@ const createWindow = (): void => {
     // and load the index.html of the app.
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
-    // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    // Only open DevTools in development
+    if (!app.isPackaged && process.env.NODE_ENV !== 'production') {
+        mainWindow.webContents.openDevTools({ mode: 'detach' });
+    }
 };
 
 // This method will be called when Electron has finished

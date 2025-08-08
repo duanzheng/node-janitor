@@ -46,8 +46,8 @@ jobs:
               run: yarn test
 
             # 可选：在 macOS Runner 上导入签名证书（如果配置了 Secrets）
-            - name: Import Apple signing certificate (optional)
-              if: runner.os == 'macOS' && secrets.MAC_CERT_P12 != ''
+      - name: Import Apple signing certificate (optional)
+        if: ${{ runner.os == 'macOS' && secrets.MAC_CERT_P12 != '' }}
               shell: bash
               run: |
                   KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
@@ -61,8 +61,9 @@ jobs:
                   MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
                   MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
 
-            - name: Build application
-              run: yarn make
+      - name: Build application (macOS universal)
+        if: ${{ startsWith(matrix.os, 'macos') }}
+        run: yarn make:universal
               env:
                   CI: true
                   NODE_ENV: production
@@ -71,6 +72,13 @@ jobs:
                   APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
                   APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
                   CSC_NAME: ${{ secrets.CSC_NAME }}
+
+      - name: Build application (non-macOS)
+        if: ${{ !startsWith(matrix.os, 'macos') }}
+        run: yarn make
+        env:
+          CI: true
+          NODE_ENV: production
 
             - name: Upload artifacts (Ubuntu)
               if: matrix.os == 'ubuntu-latest'
@@ -88,8 +96,8 @@ jobs:
                   name: windows-builds
                   path: out/make/**/*.exe
 
-            - name: Upload artifacts (macOS)
-              if: startsWith(matrix.os, 'macos')
+      - name: Upload artifacts (macOS)
+        if: ${{ startsWith(matrix.os, 'macos') }}
               uses: actions/upload-artifact@v4
               with:
                   name: macos-builds-${{ matrix.os }}
