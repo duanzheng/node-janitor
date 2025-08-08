@@ -187,9 +187,10 @@ async function detectPackageManagerCaches(): Promise<Cache[]> {
   // Detect pnpm cache
   try {
     const homeDir = app.getPath('home');
+    const tmpDir = app.getPath('temp');
     const { stdout: pnpmCachePath } = await execa('pnpm', ['store', 'path'], {
       cwd: homeDir,
-      env: { ...process.env },
+      env: { ...process.env, TMPDIR: tmpDir },
     });
     const resolved = pnpmCachePath.trim();
     const pnpmCacheSize = await getDirectorySize(resolved);
@@ -257,9 +258,13 @@ async function cleanPackageManagerCache(packageManager: string): Promise<IPCResu
         await execa('yarn', ['cache', 'clean']);
         break;
       case 'pnpm': {
-        // Ensure pnpm runs in user's home to avoid EROFS for temp dirs
+        // Ensure pnpm runs in user's home with writable TMPDIR to avoid EROFS
         const homeDir = app.getPath('home');
-        await execa('pnpm', ['store', 'prune'], { cwd: homeDir, env: { ...process.env } });
+        const tmpDir = app.getPath('temp');
+        await execa('pnpm', ['store', 'prune'], {
+          cwd: homeDir,
+          env: { ...process.env, TMPDIR: tmpDir },
+        });
         break;
       }
       default:
