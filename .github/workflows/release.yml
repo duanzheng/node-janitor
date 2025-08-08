@@ -95,6 +95,17 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
+      - name: Enable long paths
+        run: git config --global core.longpaths true
+
+      - name: Restore Yarn/Electron caches
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.YARN_CACHE_FOLDER }}
+            ${{ env.ELECTRON_CACHE }}
+          key: yarn-electron-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile --network-timeout 600000
 
@@ -132,6 +143,14 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
+
+      - name: Restore Yarn/Electron caches
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ${{ env.YARN_CACHE_FOLDER }}
+            ${{ env.ELECTRON_CACHE }}
+          key: yarn-electron-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile --network-timeout 600000
