@@ -103,4 +103,4 @@ fi
 
 success "Installed: $TARGET_PATH"
 info "Launching application..."
-open -a "${TARGET_PATH%/*.app}"
+open "$TARGET_PATH"
