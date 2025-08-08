@@ -46,10 +46,14 @@ jobs:
               run: yarn test
 
             # 可选：在 macOS Runner 上导入签名证书（如果配置了 Secrets）
-            - name: Import Apple signing certificate (optional)
-              if: ${{ runner.os == 'macOS' && secrets.MAC_CERT_P12 != '' }}
+          - name: Import Apple signing certificate (optional)
+            if: ${{ runner.os == 'macOS' }}
               shell: bash
               run: |
+              if [[ -z "$MAC_CERT_P12" ]]; then
+                echo "No MAC_CERT_P12 provided. Skipping certificate import.";
+                exit 0;
+              fi
                   KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
                   security create-keychain -p "$MAC_CERT_PASSWORD" "$KEYCHAIN_PATH"
                   security set-keychain-settings -t 3600 -l "$KEYCHAIN_PATH"
