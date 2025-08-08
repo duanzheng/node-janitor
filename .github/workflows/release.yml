@@ -82,6 +82,9 @@ jobs:
   build-windows:
     name: Windows build
     runs-on: windows-latest
+    env:
+      YARN_CACHE_FOLDER: ${{ runner.temp }}/yarn-cache
+      ELECTRON_CACHE: ${{ runner.temp }}/electron-cache
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -93,7 +96,16 @@ jobs:
           cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --frozen-lockfile --network-timeout 600000
+
+      - name: Cache Yarn and Electron downloads
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.YARN_CACHE_FOLDER }}
+            ${{ env.ELECTRON_CACHE }}
+          key: yarn-electron-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
 
       - name: Make
         run: yarn make
@@ -108,6 +120,9 @@ jobs:
   build-linux:
     name: Linux build
     runs-on: ubuntu-latest
+    env:
+      YARN_CACHE_FOLDER: ${{ runner.temp }}/yarn-cache
+      ELECTRON_CACHE: ${{ runner.temp }}/electron-cache
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -119,7 +134,16 @@ jobs:
           cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --frozen-lockfile --network-timeout 600000
+
+      - name: Cache Yarn and Electron downloads
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ${{ env.YARN_CACHE_FOLDER }}
+            ${{ env.ELECTRON_CACHE }}
+          key: yarn-electron-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
 
       - name: Make
         run: yarn make
