@@ -1,129 +1,97 @@
-name: Build and Release
+name: release
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+  build-macos:
+    name: macOS signed & notarized DMG (${{ matrix.arch }})
+    runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
+        arch: [x64, arm64]
+
+    env:
+      # Electron Forge reads these inside forge.config.js
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      CSC_NAME: ${{ secrets.MAC_CSC_NAME }}
+      # Keychain password used for a temporary keychain on the runner
+      KEYCHAIN_PASSWORD: ${{ secrets.MAC_KEYCHAIN_PASSWORD }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/yarn
-            node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+          cache: 'yarn'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile --prefer-offline
-        env:
-          YARN_CACHE_FOLDER: ~/.cache/yarn
+        run: yarn install --frozen-lockfile
 
-      - name: Run tests
-        run: yarn test
-
-      - name: Import Apple signing cert (optional)
-        if: ${{ startsWith(matrix.os, 'macos') }}
-        shell: bash
+      - name: Import signing certificate into temporary keychain
+        if: ${{ env.CSC_NAME != '' }}
         env:
-          MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
-          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+          SIGNING_CERT_BASE64: ${{ secrets.MAC_SIGNING_CERT_BASE64 }}
+          SIGNING_CERT_PASSWORD: ${{ secrets.MAC_SIGNING_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ env.KEYCHAIN_PASSWORD }}
         run: |
-          if [[ -z "$MAC_CERT_P12" ]]; then
-            echo "Skipping certificate import; no MAC_CERT_P12.";
-            exit 0;
-          fi
-          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
-          security create-keychain -p "$MAC_CERT_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -t 3600 -l "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$MAC_CERT_PASSWORD" "$KEYCHAIN_PATH"
-          echo "$MAC_CERT_P12" | base64 --decode > $RUNNER_TEMP/cert.p12
-          security import $RUNNER_TEMP/cert.p12 -k "$KEYCHAIN_PATH" -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
-          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychain -d user | sed s/\"//g)
+          set -euxo pipefail
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-      - name: Build (macOS, host arch)
-        if: ${{ startsWith(matrix.os, 'macos') }}
-        run: yarn make
-        env:
-          CI: true
-          NODE_ENV: production
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          CSC_NAME: ${{ secrets.CSC_NAME }}
+          # Import Developer ID Application .p12
+          echo "$SIGNING_CERT_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN_PATH" -P "$SIGNING_CERT_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
 
-      - name: Build (non-macOS)
-        if: ${{ !startsWith(matrix.os, 'macos') }}
-        run: yarn make
-        env:
-          CI: true
-          NODE_ENV: production
+          # Ensure codesign can find the certificate in this keychain
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed 's/["[:space:]]//g')
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-      - name: Upload artifacts (Ubuntu)
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Build signed & notarized DMG for ${{ matrix.arch }}
+        run: |
+          # Build for explicit arch to avoid CI host-arch only artifacts
+          yarn make --arch=${{ matrix.arch }}
+
+      - name: Show produced files
+        run: |
+          echo "Artifacts under out/make:"
+          find out/make -type f | sed 's/^/  /'
+
+      - name: Upload artifact (DMG)
         uses: actions/upload-artifact@v4
         with:
-          name: linux-builds
+          name: node-janitor-macos-${{ matrix.arch }}
+          # Electron Forge DMG names include productName; match both arch outputs
           path: |
-            out/make/**/*.deb
-            out/make/**/*.rpm
-
-      - name: Upload artifacts (Windows)
-        if: ${{ matrix.os == 'windows-latest' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-builds
-          path: out/make/**/*.exe
-
-      - name: Upload artifacts (macOS)
-        if: ${{ startsWith(matrix.os, 'macos') }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-builds-${{ matrix.os }}
-          path: |
-            out/make/**/*.dmg
-            out/make/**/*.zip
+            out/make/**/Node*Janitor*.dmg
+            out/make/**/node*janitor*.dmg
 
   release:
-    needs: build
+    needs: build-macos
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
       - name: Download all artifacts
         uses: actions/download-artifact@v4
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+        with:
+          path: dist-artifacts
+
+      - name: Create GitHub Release and upload DMGs
+        uses: softprops/action-gh-release@v2
         with:
           files: |
-            linux-builds/**/*
-            windows-builds/**/*
-            macos-builds-*/**/*
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+            dist-artifacts/**/**.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
