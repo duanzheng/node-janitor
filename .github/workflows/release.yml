@@ -19,91 +19,91 @@ jobs:
                 os: [ubuntu-latest, windows-latest, macos-13, macos-latest]
 
         steps:
-          - name: Checkout code
-            uses: actions/checkout@v4
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-          - name: Setup Node.js
-            uses: actions/setup-node@v4
-            with:
-              node-version: '20'
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
 
-          - name: Cache dependencies
-            uses: actions/cache@v4
-            with:
-              path: |
-                ~/.cache/yarn
-                node_modules
-              key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-              restore-keys: |
-                ${{ runner.os }}-yarn-
+            - name: Cache dependencies
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      ~/.cache/yarn
+                      node_modules
+                  key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-yarn-
 
-          - name: Install dependencies
-            run: yarn install --frozen-lockfile --prefer-offline
-            env:
-              YARN_CACHE_FOLDER: ~/.cache/yarn
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile --prefer-offline
+              env:
+                  YARN_CACHE_FOLDER: ~/.cache/yarn
 
-          - name: Run tests
-            run: yarn test
+            - name: Run tests
+              run: yarn test
 
-          # 可选：在 macOS Runner 上导入签名证书（如果配置了 Secrets）
-          - name: Import Apple signing certificate (optional)
-            if: ${{ runner.os == 'macOS' && secrets.MAC_CERT_P12 != '' }}
-            shell: bash
-            run: |
-              KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
-              security create-keychain -p "$MAC_CERT_PASSWORD" "$KEYCHAIN_PATH"
-              security set-keychain-settings -t 3600 -l "$KEYCHAIN_PATH"
-              security unlock-keychain -p "$MAC_CERT_PASSWORD" "$KEYCHAIN_PATH"
-              echo "$MAC_CERT_P12" | base64 --decode > $RUNNER_TEMP/cert.p12
-              security import $RUNNER_TEMP/cert.p12 -k "$KEYCHAIN_PATH" -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
-              security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychain -d user | sed s/\"//g)
-            env:
-              MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
-              MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+            # 可选：在 macOS Runner 上导入签名证书（如果配置了 Secrets）
+            - name: Import Apple signing certificate (optional)
+              if: ${{ runner.os == 'macOS' && secrets.MAC_CERT_P12 != '' }}
+              shell: bash
+              run: |
+                  KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+                  security create-keychain -p "$MAC_CERT_PASSWORD" "$KEYCHAIN_PATH"
+                  security set-keychain-settings -t 3600 -l "$KEYCHAIN_PATH"
+                  security unlock-keychain -p "$MAC_CERT_PASSWORD" "$KEYCHAIN_PATH"
+                  echo "$MAC_CERT_P12" | base64 --decode > $RUNNER_TEMP/cert.p12
+                  security import $RUNNER_TEMP/cert.p12 -k "$KEYCHAIN_PATH" -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
+                  security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychain -d user | sed s/\"//g)
+              env:
+                  MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
+                  MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
 
-          - name: Build application (macOS universal)
-            if: ${{ startsWith(matrix.os, 'macos') }}
-            run: yarn make:universal
-            env:
-              CI: true
-              NODE_ENV: production
-              # 下面这些变量用于 forge.config.js 自动启用签名与公证
-              APPLE_ID: ${{ secrets.APPLE_ID }}
-              APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-              APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-              CSC_NAME: ${{ secrets.CSC_NAME }}
+            - name: Build application (macOS universal)
+              if: ${{ startsWith(matrix.os, 'macos') }}
+              run: yarn make:universal
+              env:
+                  CI: true
+                  NODE_ENV: production
+                  # 下面这些变量用于 forge.config.js 自动启用签名与公证
+                  APPLE_ID: ${{ secrets.APPLE_ID }}
+                  APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+                  APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+                  CSC_NAME: ${{ secrets.CSC_NAME }}
 
-          - name: Build application (non-macOS)
-            if: ${{ !startsWith(matrix.os, 'macos') }}
-            run: yarn make
-            env:
-              CI: true
-              NODE_ENV: production
+            - name: Build application (non-macOS)
+              if: ${{ !startsWith(matrix.os, 'macos') }}
+              run: yarn make
+              env:
+                  CI: true
+                  NODE_ENV: production
 
-          - name: Upload artifacts (Ubuntu)
-            if: ${{ matrix.os == 'ubuntu-latest' }}
-            uses: actions/upload-artifact@v4
-            with:
-              name: linux-builds
-              path: |
-                out/make/**/*.deb
-                out/make/**/*.rpm
+            - name: Upload artifacts (Ubuntu)
+              if: ${{ matrix.os == 'ubuntu-latest' }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: linux-builds
+                  path: |
+                      out/make/**/*.deb
+                      out/make/**/*.rpm
 
-          - name: Upload artifacts (Windows)
-            if: ${{ matrix.os == 'windows-latest' }}
-            uses: actions/upload-artifact@v4
-            with:
-              name: windows-builds
-              path: out/make/**/*.exe
+            - name: Upload artifacts (Windows)
+              if: ${{ matrix.os == 'windows-latest' }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: windows-builds
+                  path: out/make/**/*.exe
 
-          - name: Upload artifacts (macOS)
-            if: ${{ startsWith(matrix.os, 'macos') }}
-            uses: actions/upload-artifact@v4
-            with:
-              name: macos-builds-${{ matrix.os }}
-              path: |
-                out/make/**/*.dmg
-                out/make/**/*.zip
+            - name: Upload artifacts (macOS)
+              if: ${{ startsWith(matrix.os, 'macos') }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: macos-builds-${{ matrix.os }}
+                  path: |
+                      out/make/**/*.dmg
+                      out/make/**/*.zip
 
     release:
         needs: build
