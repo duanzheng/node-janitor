@@ -95,6 +95,12 @@ jobs:
           node-version: '20'
           cache: 'yarn'
 
+      - name: Force npm registry to npmjs (Windows)
+        run: |
+          echo registry=https://registry.npmjs.org > .npmrc
+          yarn config set registry https://registry.npmjs.org
+          powershell -Command "(Get-Content yarn.lock) -replace 'https://registry.npmmirror.com','https://registry.npmjs.org' | Set-Content yarn.lock"
+
       - name: Enable long paths
         run: git config --global core.longpaths true
 
@@ -143,6 +149,12 @@ jobs:
         with:
           node-version: '20'
           cache: 'yarn'
+
+      - name: Force npm registry to npmjs (Linux)
+        run: |
+          echo 'registry=https://registry.npmjs.org' > .npmrc
+          yarn config set registry https://registry.npmjs.org
+          sed -i 's#https://registry.npmmirror.com#https://registry.npmjs.org#g' yarn.lock || true
 
       - name: Restore Yarn/Electron caches
         uses: actions/cache/restore@v4
