@@ -17,7 +17,7 @@ A tiny desktop tool to reclaim disk space by cleaning `node_modules` and package
 
   ```bash
   curl -fsSL https://raw.githubusercontent.com/duanzheng/node-janitor/main/scripts/install-macos.sh -o /tmp/install-node-janitor.sh
-  bash /tmp/install-macos.sh || bash /tmp/install-node-janitor.sh
+  bash /tmp/install-node-janitor.sh
   ```
 
   说明：脚本会自动识别芯片架构（Apple Silicon/Intel）、下载最新 DMG、挂载、复制到“应用程序”，并清理 `com.apple.quarantine` 后直接打开应用。
