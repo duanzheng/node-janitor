@@ -1,7 +1,7 @@
 {
   "name": "node-janitor",
   "productName": "node-janitor",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A powerful desktop application for cleaning Node.js project dependencies and package manager caches",
   "main": ".webpack/main",
   "scripts": {
@@ -10,7 +10,7 @@
     "build": "webpack --config webpack.renderer.config.js",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "node scripts/release.js",
+    "release": "node scripts/release.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
